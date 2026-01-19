@@ -43,7 +43,8 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-
+// Launching MainScreen here, which contains the main UI - I decided to this,
+// in case I want to add more screens later
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,7 +55,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-}
+    }
 
 @Composable
 fun MainScreen(
@@ -64,7 +65,10 @@ fun MainScreen(
     // collect persisted events from Room
     val events by viewModel.useEvents.collectAsState(initial = emptyList())
 
+    // current time state that updates every second - stores time in millis
     var currentTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
+
+    // update currentTime every second
     LaunchedEffect(Unit) {
         while (true) {
             delay(1000L)
@@ -74,6 +78,8 @@ fun MainScreen(
 
     // derive nextAllowedTime from the most-recent event
     val nextAllowedTime = events.firstOrNull()?.nextAt
+
+    // determines if the button should be enabled
     val buttonEnabled by remember(nextAllowedTime, currentTime) {
         derivedStateOf { nextAllowedTime?.let { currentTime >= it } ?: true }
     }
@@ -86,22 +92,26 @@ fun MainScreen(
         }.toMutableList()
     }
 
-    // reserved spacing values same as before
+    // reserved spacing values
     val buttonHeight = 48.dp
     val buttonBottomMargin = 16.dp
     val reservedBottom = buttonHeight + buttonBottomMargin + 8.dp
 
+    // Scaffold for basic screen structure
     Scaffold(modifier = modifier.fillMaxSize()) { innerPadding ->
+        // Box for stacking elements
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
                 .systemBarsPadding()
         ) {
+            // Header
             Header(modifier = Modifier.align(Alignment.TopCenter),
                 nextAllowedTime = nextAllowedTime,
                 currentTime = currentTime)
 
+            // Scrollable column for usage history
             Column(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
@@ -111,6 +121,7 @@ fun MainScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Showing each usage event
                 useTimes.forEach { (used, next) ->
                     Box(
                         modifier = Modifier
@@ -121,6 +132,7 @@ fun MainScreen(
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                         contentAlignment = Alignment.Center
                     ) {
+                        // Row to separate use time and next allowed time
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -144,7 +156,7 @@ fun MainScreen(
                     }
                 }
             }
-
+            // Use Button at the bottom
             UseButton(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -156,6 +168,7 @@ fun MainScreen(
     }
 }
 
+// Helper function to format remaining time into HH:MM:SS or "Ready to use"
 private fun formatRemainingTime(remainingMs: Long?): String {
     if (remainingMs == null || remainingMs <= 0L) {
         return "Ready to use"
@@ -168,6 +181,8 @@ private fun formatRemainingTime(remainingMs: Long?): String {
         "Next %02d:%02d:%02d", hours, minutes, seconds)
 
 }
+
+// Header composable showing app title and countdown timer
 @Composable
 fun Header(
     modifier: Modifier = Modifier,
@@ -203,6 +218,7 @@ fun Header(
     }
 }
 
+// UseButton composable for the "Use" button
 @Composable
 fun UseButton(
     modifier: Modifier = Modifier,
@@ -221,13 +237,5 @@ fun UseButton(
             text = "Use",
             style = MaterialTheme.typography.labelLarge
         )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    NicotineTrackerTheme {
-        MainScreen()
     }
 }
