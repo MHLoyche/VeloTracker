@@ -24,7 +24,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // Flow of persisted use events
     val useEvents: Flow<List<UseEvent>> = dao.getAllDescending()
 
-    fun onUseClicked() {
+    fun onUseClicked(incrementMinutes: Boolean = true) {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             val minutes = ds.data.first()[PrefKeys.MINUTES_TO_ADD] ?: 60
@@ -35,8 +35,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 dao.insert(UseEvent(usedAt = now, nextAt = nextAt))
             }
 
-            ds.edit { prefs ->
-                prefs[PrefKeys.MINUTES_TO_ADD] = minutes + 1
+            if (incrementMinutes) {
+                ds.edit { prefs ->
+                    prefs[PrefKeys.MINUTES_TO_ADD] = minutes + 1
+                }
             }
         }
     }
