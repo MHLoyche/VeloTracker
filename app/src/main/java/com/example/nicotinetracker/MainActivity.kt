@@ -83,6 +83,9 @@ fun MainScreen(
         derivedStateOf { nextAllowedTime?.let { currentTime >= it } ?: true }
     }
 
+    // toggle to stop the incrementing of wait time after each use
+    val incrementEnabledState = remember { androidx.compose.runtime.mutableStateOf(true)}
+
     // transform events to the same string pairs used by UI
     val formatter = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
     val useTimes = remember(events) {
@@ -155,17 +158,43 @@ fun MainScreen(
                     }
                 }
             }
-            // Use Button at the bottom
-            UseButton(
+            Row(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 16.dp),
-                enabled = buttonEnabled,
-                onClick = { viewModel.onUseClicked() }
-            )
+                    .padding(bottom = 16.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+
+                UseButton(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    enabled = buttonEnabled,
+                    onClick = {
+                        viewModel.onUseClicked(incrementEnabledState.value)
+                    }
+                )
+                Button(
+                    onClick = {
+                        incrementEnabledState.value = !incrementEnabledState.value
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Text(
+                        text = if (incrementEnabledState.value) "Stop Increment" else "Resume Increment",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+            }
         }
     }
 }
+
 
 // Helper function to format remaining time into HH:MM:SS or "Ready to use"
 private fun formatRemainingTime(remainingMs: Long?): String {
