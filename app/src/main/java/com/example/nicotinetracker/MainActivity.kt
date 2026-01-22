@@ -187,7 +187,7 @@ fun MainScreen(
                     shape = RoundedCornerShape(24.dp)
                 ) {
                     Text(
-                        text = if (incrementEnabled) "Stop Increment" else "Start Increment",
+                        text = if (incrementEnabled) "Start Increment" else "Stop Increment",
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
