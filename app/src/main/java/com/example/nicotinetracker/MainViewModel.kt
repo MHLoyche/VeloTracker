@@ -24,6 +24,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // Flow of persisted use events
     val useEvents: Flow<List<UseEvent>> = dao.getAllDescending()
 
+    val incrementEnabled: Flow<Boolean> = ds.data.map { prefs ->
+        prefs[PrefKeys.INCREMENT_ENABLED] ?: true
+    }
+
+    fun setIncrementEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            ds.edit { prefs ->
+                prefs[PrefKeys.INCREMENT_ENABLED] = enabled
+            }
+        }
+    }
+
     fun onUseClicked(incrementMinutes: Boolean = true) {
         viewModelScope.launch {
             val now = System.currentTimeMillis()

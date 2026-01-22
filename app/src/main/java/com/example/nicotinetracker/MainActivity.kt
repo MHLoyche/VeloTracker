@@ -41,6 +41,7 @@ import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Locale
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlin.text.format
 
 // Launching MainScreen here, which contains the main UI - I decided to this,
 // in case I want to add more screens later
@@ -84,7 +85,7 @@ fun MainScreen(
     }
 
     // toggle to stop the incrementing of wait time after each use
-    val incrementEnabledState = remember { androidx.compose.runtime.mutableStateOf(true)}
+    val incrementEnabled by viewModel.incrementEnabled.collectAsState(initial = true)
 
     // transform events to the same string pairs used by UI
     val formatter = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
@@ -173,12 +174,12 @@ fun MainScreen(
                         .height(48.dp),
                     enabled = buttonEnabled,
                     onClick = {
-                        viewModel.onUseClicked(incrementEnabledState.value)
+                        viewModel.onUseClicked(incrementEnabled)
                     }
                 )
                 Button(
                     onClick = {
-                        incrementEnabledState.value = !incrementEnabledState.value
+                        viewModel.setIncrementEnabled(!incrementEnabled)
                     },
                     modifier = Modifier
                         .weight(1f)
@@ -186,7 +187,7 @@ fun MainScreen(
                     shape = RoundedCornerShape(24.dp)
                 ) {
                     Text(
-                        text = if (incrementEnabledState.value) "Stop Increment" else "Start Increment",
+                        text = if (incrementEnabled) "Stop Increment" else "Start Increment",
                         style = MaterialTheme.typography.labelLarge
                     )
                 }
