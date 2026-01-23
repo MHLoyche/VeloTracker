@@ -174,7 +174,7 @@ fun MainScreen(
                         .height(48.dp),
                     enabled = buttonEnabled,
                     onClick = {
-                        viewModel.onUseClicked(incrementEnabled)
+                        viewModel.onUseClicked()
                     }
                 )
                 Button(
@@ -187,7 +187,7 @@ fun MainScreen(
                     shape = RoundedCornerShape(24.dp)
                 ) {
                     Text(
-                        text = if (incrementEnabled) "Start Increment" else "Stop Increment",
+                        text = if (incrementEnabled) "Stop Increment" else "Start Increment",
                         style = MaterialTheme.typography.labelLarge
                     )
                 }

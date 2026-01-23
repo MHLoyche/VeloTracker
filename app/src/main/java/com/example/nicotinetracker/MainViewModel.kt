@@ -6,15 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.nicotinetracker.data.AppDatabase
 import com.example.nicotinetracker.data.PrefKeys
 import com.example.nicotinetracker.data.UseEvent
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import androidx.datastore.preferences.core.edit
 import com.example.nicotinetracker.data.dataStore
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -39,7 +37,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun onUseClicked(incrementMinutes: Boolean = true) {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
+            val prefs = ds.data.first()
             val minutes = ds.data.first()[PrefKeys.MINUTES_TO_ADD] ?: 60
+            val shouldIncrement = prefs[PrefKeys.INCREMENT_ENABLED] ?: true
             val nextAt = now + minutes * 60_000L
 
             // run blocking DAO call on IO dispatcher
@@ -47,7 +47,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 dao.insert(UseEvent(usedAt = now, nextAt = nextAt))
             }
 
-            if (incrementMinutes) {
+            if (shouldIncrement) {
                 ds.edit { prefs ->
                     prefs[PrefKeys.MINUTES_TO_ADD] = minutes + 1
                 }
