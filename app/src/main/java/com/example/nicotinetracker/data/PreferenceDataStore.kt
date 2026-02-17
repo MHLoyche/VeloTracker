@@ -10,6 +10,7 @@ import androidx.datastore.preferences.preferencesDataStore
 val Context.dataStore by preferencesDataStore(name = "nicotine_prefs")
 
 object PrefKeys {
-    val MINUTES_TO_ADD = intPreferencesKey("minutes_to_add")
+    val SECONDS_TO_ADD = intPreferencesKey("seconds_to_add")
     val INCREMENT_ENABLED = booleanPreferencesKey("increment_enabled")
+    val BASE_TIMER_MINUTES = intPreferencesKey("base_timer_minutes")
 }

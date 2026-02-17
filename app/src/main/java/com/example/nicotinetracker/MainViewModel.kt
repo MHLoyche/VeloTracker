@@ -26,6 +26,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         prefs[PrefKeys.INCREMENT_ENABLED] ?: true
     }
 
+    val baseTimerMinutes: Flow<Int> = ds.data.map { prefs ->
+        prefs[PrefKeys.BASE_TIMER_MINUTES] ?: 60
+    }
+
     fun setIncrementEnabled(enabled: Boolean) {
         viewModelScope.launch {
             ds.edit { prefs ->
@@ -34,13 +38,24 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun setBaseTimerMinutes(minutes: Int) {
+        viewModelScope.launch {
+            ds.edit { prefs ->
+                prefs[PrefKeys.BASE_TIMER_MINUTES] = minutes
+                // Also reset SECONDS_TO_ADD to the new base value (converted to seconds)
+                prefs[PrefKeys.SECONDS_TO_ADD] = minutes * 60
+            }
+        }
+    }
+
     fun onUseClicked(incrementMinutes: Boolean = true) {
         viewModelScope.launch {
             val now = System.currentTimeMillis()
             val prefs = ds.data.first()
-            val minutes = ds.data.first()[PrefKeys.MINUTES_TO_ADD] ?: 60
+            // Get seconds, defaulting to 60 minutes (3600 seconds) if not set
+            val seconds = ds.data.first()[PrefKeys.SECONDS_TO_ADD] ?: 3600
             val shouldIncrement = prefs[PrefKeys.INCREMENT_ENABLED] ?: true
-            val nextAt = now + minutes * 60_000L
+            val nextAt = now + seconds * 1000L
 
             // run blocking DAO call on IO dispatcher
             withContext(Dispatchers.IO) {
@@ -49,7 +64,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             if (shouldIncrement) {
                 ds.edit { prefs ->
-                    prefs[PrefKeys.MINUTES_TO_ADD] = minutes + 1
+                    // Increment by 20 seconds instead of 1 minute
+                    prefs[PrefKeys.SECONDS_TO_ADD] = seconds + 20
                 }
             }
         }

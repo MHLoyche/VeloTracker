@@ -9,6 +9,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -31,7 +36,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -87,6 +94,12 @@ fun MainScreen(
     // toggle to stop the incrementing of wait time after each use
     val incrementEnabled by viewModel.incrementEnabled.collectAsState(initial = true)
 
+    // base timer minutes from preferences
+    val baseTimerMinutes by viewModel.baseTimerMinutes.collectAsState(initial = 60)
+
+    // dialog state for timer configuration
+    var showConfigDialog by remember { mutableStateOf(false) }
+
     // transform events to the same string pairs used by UI
     val formatter = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
     val useTimes = remember(events) {
@@ -110,9 +123,12 @@ fun MainScreen(
                 .systemBarsPadding()
         ) {
             // Header
-            Header(modifier = Modifier.align(Alignment.TopCenter),
+            Header(
+                modifier = Modifier.align(Alignment.TopCenter),
                 nextAllowedTime = nextAllowedTime,
-                currentTime = currentTime)
+                currentTime = currentTime,
+                onSettingsClick = { showConfigDialog = true }
+            )
 
             // Scrollable column for usage history
             Column(
@@ -193,6 +209,18 @@ fun MainScreen(
                 }
             }
         }
+
+        // Configuration Dialog
+        if (showConfigDialog) {
+            TimerConfigDialog(
+                currentMinutes = baseTimerMinutes,
+                onDismiss = { showConfigDialog = false },
+                onConfirm = { newMinutes ->
+                    viewModel.setBaseTimerMinutes(newMinutes)
+                    showConfigDialog = false
+                }
+            )
+        }
     }
 }
 
@@ -216,7 +244,8 @@ private fun formatRemainingTime(remainingMs: Long?): String {
 fun Header(
     modifier: Modifier = Modifier,
     nextAllowedTime: Long? = null,
-    currentTime: Long = System.currentTimeMillis()
+    currentTime: Long = System.currentTimeMillis(),
+    onSettingsClick: () -> Unit = {}
 ) {
     val remainingMs = nextAllowedTime?.let { it - currentTime }
     val timerText = formatRemainingTime(remainingMs)
@@ -242,8 +271,17 @@ fun Header(
             text = timerText,
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onPrimary,
-            textAlign = TextAlign.End
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(1f)
         )
+
+        IconButton(onClick = onSettingsClick) {
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = "Settings",
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
+        }
     }
 }
 
@@ -266,5 +304,103 @@ fun UseButton(
             text = "Use",
             style = MaterialTheme.typography.labelLarge
         )
+    }
+}
+
+// Timer configuration dialog
+@Composable
+fun TimerConfigDialog(
+    currentMinutes: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit
+) {
+    var selectedMinutes by remember { mutableIntStateOf(currentMinutes) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Set Base Timer",
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        text = {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Select the starting timer value (in minutes):",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+
+                // Number picker wheel
+                NumberPicker(
+                    value = selectedMinutes,
+                    onValueChange = { selectedMinutes = it },
+                    range = 1..180
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(selectedMinutes) }
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = onDismiss
+            ) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+// Number picker composable
+@Composable
+fun NumberPicker(
+    value: Int,
+    onValueChange: (Int) -> Unit,
+    range: IntRange,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Decrease button
+        Button(
+            onClick = { if (value > range.first) onValueChange(value - 1) },
+            enabled = value > range.first,
+            modifier = Modifier.width(60.dp)
+        ) {
+            Text("-", style = MaterialTheme.typography.titleLarge)
+        }
+
+        Spacer(modifier = Modifier.width(24.dp))
+
+        // Display current value
+        Text(
+            text = "$value min",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.width(120.dp),
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.width(24.dp))
+
+        // Increase button
+        Button(
+            onClick = { if (value < range.last) onValueChange(value + 1) },
+            enabled = value < range.last,
+            modifier = Modifier.width(60.dp)
+        ) {
+            Text("+", style = MaterialTheme.typography.titleLarge)
+        }
     }
 }
